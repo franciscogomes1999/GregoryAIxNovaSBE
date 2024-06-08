@@ -10,7 +10,7 @@ Our goal is to enhance the existing Machine Learning solution of GregoryAI with 
 ### Installation
 1. Clone the repository
 
-git clone https://github.com/yourusername/gregoryai-classification.git
+git clone https://github.com/franciscogomes1999/GregoryAIxNovaSBE.git
 
 2. Install required packages
 
