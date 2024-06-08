@@ -59,7 +59,7 @@ pip install -r requirements.txt
 
 
 ### License
-This project is licensed under the MIT License. See the LICENSE file for more details.
+This project is licensed under the GNU General Public License v3.0. See the LICENSE file for more details.
 
 ### Contact
 If you have any questions or feedback, please contact one of the following contacts:
