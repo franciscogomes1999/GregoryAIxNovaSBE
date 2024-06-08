@@ -1,4 +1,9 @@
 
+"""
+This model contains utility functions for pseudo-labelling with BERT and self-training 
+and co-training approaches for traditional ML models.
+"""
+
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -12,7 +17,8 @@ from sklearn.semi_supervised import SelfTrainingClassifier
 from scipy.sparse import vstack
 
 
-def encode_texts(tokenizer, texts, max_len=28):
+def encode_texts(tokenizer, texts, max_len=128):
+    
     """
     Encode a list of texts into input IDs and attention masks using a tokenizer.
 
@@ -151,7 +157,31 @@ def bert_iterative_training(model, tokenizer, unlabelled_data_pseudo, labelled_t
 
 def self_training(model, vectorizer, unlabelled_data_pseudo, labelled_train_df, val_df_pseudo, confidence_threshold=0.9, max_iterations=10):
 
+    """
+    Perform self-training classification using the provided model and data.
+
+    This function trains a self-training classifier on the labeled data and iteratively adds pseudo-labeled data from the
+    unlabelled data to improve the model's performance. The trained model is evaluated on the validation set.
+
+    Parameters:
+    model: The base classification model.
+    vectorizer: The text vectorizer for transforming text data.
+    unlabelled_data_pseudo (pd.DataFrame): DataFrame with pseudo-labeled unlabelled data (pre-processed).
+    labelled_train_df (pd.DataFrame): DataFrame with labeled training data (pre-processed).
+    val_df_pseudo (pd.DataFrame): DataFrame with pseudo-labeled validation data (pre-processed).
+    confidence_threshold (float, optional): The confidence threshold for pseudo-labeling. Default is 0.9.
+    max_iterations (int, optional): The maximum number of self-training iterations. Default is 10.
+
+    Returns:
+    tuple: A tuple containing:
+        - pseudo_labels (pd.DataFrame): DataFrame containing both labeled and pseudo-labeled data.
+        - X_val: Vectorized validation set features.
+        - y_val: True labels for the validation set.
+        - y_pred_val: Predicted labels for the validation set.
+    """
+
     # Vectorize the labelled, unlabelled data and validation set and extract the labels
+    
     X_labelled = vectorizer.fit_transform(labelled_train_df['text_processed'])
     X_unlabelled = vectorizer.transform(unlabelled_data_pseudo['text_processed'])
     y_labelled = labelled_train_df['relevant']
@@ -174,6 +204,32 @@ def self_training(model, vectorizer, unlabelled_data_pseudo, labelled_train_df, 
     return pseudo_labels, X_val, y_val, y_pred_val
 
 def co_training(model_1, model_2, vectorizer, unlabelled_data_pseudo, labelled_train_df, val_df_pseudo, confidence_threshold=0.9, max_iterations=5):
+
+    """
+    Perform co-training classification using two provided models and data.
+
+    This function implements a co-training approach for pseudo-labelling. It initially trains two base models (model_1 and model_2)
+    using the labeled data. Then, it iteratively pseudo-labels the unlabelled data using the models, selects confident predictions 
+    above a specified confidence threshold, and adds them to the labeled data for re-training. The process repeats for a maximum 
+    number of iterations, and the trained models are evaluated on the validation set.
+
+    Parameters:
+    model_1: The first base classification model.
+    model_2: The second base classification model.
+    vectorizer: The text vectorizer for transforming text data.
+    unlabelled_data_pseudo (pd.DataFrame): DataFrame with pseudo-labeled unlabelled data (pre-processed).
+    labelled_train_df (pd.DataFrame): DataFrame with labeled training data (pre-processed).
+    val_df_pseudo (pd.DataFrame): DataFrame with pseudo-labeled validation data (pre-processed).
+    confidence_threshold (float, optional): The confidence threshold for pseudo-labeling. Default is 0.9.
+    max_iterations (int, optional): The maximum number of co-training iterations. Default is 5.
+
+    Returns:
+    tuple: A tuple containing:
+        - pseudo_labels (pd.DataFrame): DataFrame containing both labeled and pseudo-labeled data.
+        - X_val: Vectorized validation set features.
+        - y_val: True labels for the validation set.
+        - y_pred_val: Predicted labels for the validation set.
+    """
 
     # Vectorize the labelled, unlabelled data and validation set and extract the labels
     X_labelled = vectorizer.fit_transform(labelled_train_df['text_processed'])
@@ -223,7 +279,3 @@ def co_training(model_1, model_2, vectorizer, unlabelled_data_pseudo, labelled_t
     y_pred_val = np.round((y_pred_val_1 + y_pred_val_2) / 2).astype(int)
 
     return pseudo_labels, X_val, y_val, y_pred_val
-
-
-## Evaluation Pseudo
-## Ask cost estimation
