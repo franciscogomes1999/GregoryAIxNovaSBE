@@ -17,12 +17,12 @@ git clone https://github.com/franciscogomes1999/GregoryAIxNovaSBE.git
 pip install -r requirements.txt
 
 ### Usage
-##### Train and Tune the Model
-1. Open and run the train_tune_notebook.ipynb notebook.
-2. Follow the instructions within the notebook to train and tune the model.
+##### Train the Model
+1. Open and run the training_model.ipynb notebook inside the folder notebooks_to_run.
+2. Follow the instructions within the notebook to train the model.
 
 ##### Classify New Articles
-1. Open and run the classify_notebook.ipynb notebook.
+1. Open and run the classification_of_articles.ipynb notebook inside the folder notebooks_to_run.
 2. Follow the instructions within the notebook to classify new articles.
 
 
@@ -41,7 +41,7 @@ pip install -r requirements.txt
 - Store the trained model weights.
 8. Evaluate: Evaluate the model's performance using validation and test datasets.
 
-![Train & Tune Pipeline](images/train_tune_pipeline.jpg)
+![Train & Tune Pipeline](images/train_tune_pipeline_diagram.jpg)
 
 
 
@@ -51,15 +51,12 @@ pip install -r requirements.txt
 3. Clean + Preprocess: Data cleaning and preprocessing steps are performed.
 4. Filtered and Processed Data: The cleaned data is saved as new_unlabelled_articles.csv.
 5. Classify:
-- Import the model weights.
-- Classify the articles to generate predictions.
+- Imports the model weights.
+- Classifies the articles to generate predictions.
 6. Output: Save the updated CSV file with predicted labels for new articles.
 
-![Classify Pipeline](images/classify_pipeline.jpg) 
+![Classify Pipeline](images/classify_pipeline_diagram.jpg) 
 
-
-### Configuration
-The configuration settings for the project can be found in the config.yaml file. Modify this file to change parameters such as data paths, model hyperparameters, and training settings.
 
 ### License
 This project is licensed under the MIT License. See the LICENSE file for more details.
