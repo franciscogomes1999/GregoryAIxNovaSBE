@@ -119,7 +119,7 @@ def bert_iterative_training(model, tokenizer, unlabelled_data_pseudo, labelled_t
         y_val = to_categorical(val_df_pseudo['relevant'], num_classes=2)
 
         # Train the model on the labelled data
-        model.fit([X_labelled_ids, X_labelled_masks], y_labelled, epochs=8, batch_size=32, verbose=2, validation_data=([X_val_ids, X_val_masks], y_val), callbacks=[early_stopping])
+        model.fit([X_labelled_ids, X_labelled_masks], y_labelled, epochs=8, batch_size=16, verbose=2, validation_data=([X_val_ids, X_val_masks], y_val), callbacks=[early_stopping])
 
         # Re-tokenize the remaining unlabelled data
         X_unlabelled_ids, X_unlabelled_masks = encode_texts(tokenizer, unlabelled_data_pseudo['text_processed'].values, max_len=max_len)
