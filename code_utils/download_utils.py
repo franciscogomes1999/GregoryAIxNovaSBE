@@ -244,7 +244,7 @@ def download_and_extract_zip(url, old_articles, n_articles_inference):
             except:
                 raise ValueError("The number of articles for inference is not a valid integer or 'max'.")
 
-    train_df = articles_df.loc[articles_df["article_id"].isin(old_articles_df["article_id"])]
+    train_df = articles_df.loc[~articles_df["article_id"].isin(inference_df["article_id"])]
 
     save_dataframe_to_date_folder(train_df, 'train_articles.csv')
     save_dataframe_to_date_folder(inference_df, 'inference_articles.csv')
