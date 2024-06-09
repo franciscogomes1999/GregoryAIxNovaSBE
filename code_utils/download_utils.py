@@ -9,6 +9,8 @@ import math
 import os
 import shutil
 from datetime import datetime
+import zipfile
+from io import BytesIO
 
 def get_initial_count(url, api_key=None):
 
@@ -106,6 +108,7 @@ def save_dataframe_to_date_folder(df, filename):
     base_folder = 'data'
     current_date_folder = datetime.now().strftime('%Y-%m-%d')
     date_folder_path = os.path.join(base_folder, current_date_folder)
+    file_path = os.path.join(date_folder_path, filename)
 
     # Create the 'data' folder if it does not exist
     if not os.path.exists(base_folder):
@@ -115,16 +118,9 @@ def save_dataframe_to_date_folder(df, filename):
     if not os.path.exists(date_folder_path):
         os.makedirs(date_folder_path)
     else:
-        # Clear the contents of the existing date folder
-        for file in os.listdir(date_folder_path):
-            file_path = os.path.join(date_folder_path, file)
-            if os.path.isfile(file_path):
-                os.unlink(file_path)
-            elif os.path.isdir(file_path):
-                shutil.rmtree(file_path)
-
-    # Define the path to save the CSV file
-    file_path = os.path.join(date_folder_path, filename)
+        # Delete duplicate file
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
     # Save the DataFrame to the CSV file
     df.to_csv(file_path)
@@ -140,7 +136,7 @@ def fetch_all_articles(url, old_articles, n_articles_inference, api_key=None, ar
     Parameters:
         url (str): The API endpoint to fetch articles.
                    Use this url 'https://api.gregory-ms.com/articles/?format=json'
-        old_articles (string or pd.DataFrame: The previous articles data. In case there is not previosu data, pass an empty DataFrame.
+        old_articles (string or pd.DataFrame: The previous articles data. In case there is not previous data, pass an empty DataFrame.
         n_articles_inference (int or string): The number of articles return seperately for inference.
                                               If this number is smaller than the total number of new articles, then all new_articles will be returned.
                                               The string 'max' can be passed to return all new articles for inference.
@@ -198,3 +194,62 @@ def fetch_all_articles(url, old_articles, n_articles_inference, api_key=None, ar
     save_dataframe_to_date_folder(inference_df, 'inference_articles.csv')
 
     return train_df, inference_df
+
+def download_and_extract_zip(url, old_articles, n_articles_inference):
+
+    """
+    Fetch all articles using concurrent futures and save the data to a CSV file.
+    Returns 
+
+    Parameters:
+        url (str): The url with the articles.zip
+                   Use this url 'https://gregory-ms.com/developers/articles.zip'
+        old_articles (string or pd.DataFrame: The previous articles data. In case there is no previous data, pass an empty DataFrame.
+        n_articles_inference (int or string): The number of articles return seperately for inference.
+                                              If this number is smaller than the total number of new articles, then all new_articles will be returned.
+                                              The string 'max' can be passed to return all new articles for inference.
+
+    Returns:
+        train_df (pd.DataFrame): A DataFrame containing all the articles, except for the last n_articles_inference.
+        inference_df (pd.DataFrame): A DataFrame containing a number of newly fetched articles for inference, specified by n_articles_inference.
+    """
+
+    try:
+        old_articles_df = pd.read_csv(old_articles, index_col=0)
+    except:
+        if not isinstance(old_articles, pd.DataFrame):
+            raise ValueError("The previous articles data is not a valid DataFrame or path.")
+        else:
+            old_articles_df = old_articles
+
+    response = requests.get('https://gregory-ms.com/developers/articles.zip')
+    response.raise_for_status()
+
+    with zipfile.ZipFile(BytesIO(response.content)) as z:   # BytesIO is used to convert the content to a file-like object, avoiding the need to extract the contents to disk
+        for file_info in z.infolist():
+            if file_info.filename.endswith('.csv'):
+                with z.open(file_info) as file:
+                    articles_df = pd.read_csv(file, index_col=1).drop(columns='Unnamed: 0')
+
+    new_articles_id = set(articles_df.index) - set(old_articles_df.index)
+    all_new_articles = articles_df.loc[list(new_articles_id)]
+
+    if isinstance(n_articles_inference, str) and n_articles_inference == 'max':
+        inference_df = all_new_articles
+    elif isinstance(n_articles_inference, int):
+        if n_articles_inference >= len(all_new_articles):
+            inference_df = all_new_articles
+        else:
+            try:
+                inference_df = all_new_articles.tail(n_articles_inference)
+            except:
+                raise ValueError("The number of articles for inference is not a valid integer or 'max'.")
+
+    remaining_articles_id = set(articles_df.index) - set(inference_df.index)
+    train_df = articles_df.loc[list(remaining_articles_id)]
+
+    save_dataframe_to_date_folder(train_df, 'train_articles.csv')
+    save_dataframe_to_date_folder(inference_df, 'inference_articles.csv')
+
+    return train_df, inference_df
+    
