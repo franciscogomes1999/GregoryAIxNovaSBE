@@ -16,6 +16,8 @@ from tensorflow.keras.callbacks import EarlyStopping
 from transformers import BertTokenizer, TFBertModel
 from tensorflow.keras.regularizers import l2
 import joblib
+import kerastuner as kt
+from kerastuner.tuners import Hyperband
 
 class BERT_Classifier:
     """
@@ -68,6 +70,8 @@ class BERT_Classifier:
         Evaluates the model and returns specified metrics.
     calculate_and_plot_token_lengths(train_df, val_df, test_df):
         Calculates and plots the token lengths for the given dataframes.
+    hyperparameter_tuning(X_train_ids, X_train_masks, y_train, X_val_ids, X_val_masks, y_val):
+        Tunes the hyperparameters using KerasTuner's Hyperband.
     """
 
     def __init__(self, max_len=128, bert_model_name='microsoft/BiomedNLP-BiomedBERT-base-uncased-abstract-fulltext', best_learning_rate=2e-05, best_dense_units=48, best_freeze_weights=False):
@@ -271,6 +275,68 @@ class BERT_Classifier:
         print("\nTest Dataset Token Length Distribution:")
         print(test_distribution)
 
+    def hyperparameter_tuning(self, X_train_ids, X_train_masks, y_train, X_val_ids, X_val_masks, y_val):
+        """
+        Perform hyperparameter tuning using KerasTuner's Hyperband.
+
+        Args:
+            X_train_ids (array): Training input IDs.
+            X_train_masks (array): Training attention masks.
+            y_train (array): Training labels.
+            X_val_ids (array): Validation input IDs.
+            X_val_masks (array): Validation attention masks.
+            y_val (array): Validation labels.
+        
+        Returns:
+            dict: Dictionary with configurations of the best models.
+        """
+
+        def build_bert_uncased_model_hp(hp):
+            input_ids = Input(shape=(self.max_len,), dtype=tf.int32, name="input_ids")
+            attention_masks = Input(shape=(self.max_len,), dtype=tf.int32, name="attention_masks")
+
+            self.bert_model.trainable = not hp.Boolean('freeze_bert', default=True)
+            bert_output = self.bert_model(input_ids, attention_mask=attention_masks)[0]
+            cls_token = bert_output[:, 0, :]
+
+            x = Dense(units=hp.Int('units', min_value=32, max_value=512, step=32), activation='relu', kernel_regularizer=l2(0.01))(cls_token)
+            x = Dropout(0.3)(x)
+            classification_output = Dense(2, activation='softmax')(x)
+
+            model = Model(inputs=[input_ids, attention_masks], outputs=classification_output)
+            model.compile(optimizer=Adam(learning_rate=hp.Choice('learning_rate', values=[1e-5, 2e-5, 3e-5, 4e-5, 5e-5])), loss='categorical_crossentropy', metrics=['accuracy'])
+
+            return model
+
+        tuner = Hyperband(
+            build_bert_uncased_model_hp,
+            objective='val_accuracy',
+            max_epochs=10,
+            factor=3,
+            directory='bert_uncased_tuning',
+            project_name='bert_uncased_hyperparameter_tuning'
+        )
+
+        tuner.search(
+            [X_train_ids, X_train_masks],
+            y_train,
+            validation_data=([X_val_ids, X_val_masks], y_val),
+            epochs=10,
+            batch_size=16
+        )
+
+        best_models = tuner.get_best_models(num_models=3)
+        best_models_uncased = {}
+
+        for i, model in enumerate(best_models):
+            best_models_uncased[f'best_model_{i + 1}'] = {
+                'learning_rate': model.optimizer.learning_rate.numpy(),
+                'dense_units': model.layers[3].units,
+                'freeze_weights': not model.layers[0].trainable
+            }
+
+        print(best_models_uncased)
+        return best_models_uncased
 
 # Example usage:
 
