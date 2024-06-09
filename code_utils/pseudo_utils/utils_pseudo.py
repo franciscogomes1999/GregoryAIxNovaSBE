@@ -6,6 +6,7 @@ and co-training approaches for traditional ML models.
 
 import numpy as np
 import pandas as pd
+import os
 import tensorflow as tf
 from transformers import BertTokenizer, TFBertModel
 from tensorflow.keras.layers import Input, Dense, Lambda
@@ -57,6 +58,7 @@ def encode_texts(tokenizer, texts, max_len=128):
 
 
 def create_bert_uncased_model(dense_units=48, learning_rate=1e-5, max_len=128):
+
     """
     Create a BERT-based model for text classification.
 
@@ -86,8 +88,46 @@ def create_bert_uncased_model(dense_units=48, learning_rate=1e-5, max_len=128):
     model.compile(optimizer=Adam(learning_rate=learning_rate), loss='categorical_crossentropy', metrics=['accuracy'])
 
     return model
+
+def save_model_and_pseudos_bert(model, pseudo_labels_df):
+
+    """
+    Save the BERT model and pseudo-labelled data to disk.
+
+    Parameters:
+    model (Model): The trained BERT model.
+    pseudo_labels_df (pd.DataFrame): DataFrame containing pseudo-labelled data.
+    """
+
+    # Make sure there is a models folder and a pseudo_labelling subfolder
+    current_dir = os.getcwd()
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    os.chdir(base_dir)
+
+    base_folder = 'models'
+    if not os.path.exists(base_folder):
+        os.makedirs(base_folder)
     
-def bert_iterative_training(model, tokenizer, unlabelled_data_pseudo, labelled_train_df, val_df_pseudo, max_len=128, confidence_threshold=0.9, max_iterations=10):
+    subfolder = 'pseudo_labelling'
+    if not os.path.exists(os.path.join(base_folder, subfolder)):
+        os.makedirs(os.path.join(base_folder, subfolder))
+
+    # Save the model
+    model_path = os.path.join(base_folder, subfolder, 'pseudo_bert_model')
+    if os.path.exists(model_path):
+        os.remove(model_path)
+    model.save(model_path)
+    print(f"Model saved to {model_path}")
+
+    # Save the pseudo-labelled data
+    pseudo_labels_path = os.path.join(base_folder, subfolder, 'pseudo_labels_bert.csv')
+    if os.path.exists(pseudo_labels_path):
+        os.remove(pseudo_labels_path)
+    pseudo_labels_df.to_csv(pseudo_labels_path)
+    print(f"Pseudo-labelled data saved to {pseudo_labels_path}")
+
+def bert_iterative_training(tokenizer, unlabelled_data_pseudo, labelled_train_df, val_df_pseudo, dense_units=48, learning_rate=1e-5, max_len=128, confidence_threshold=0.9, max_iterations=10):
+
     """
     Iteratively train a BERT model on labelled data, predict on unlabelled data, and move confident predictions to the labelled set.
 
@@ -109,6 +149,7 @@ def bert_iterative_training(model, tokenizer, unlabelled_data_pseudo, labelled_t
     iteration = 0
 
     while len(unlabelled_data_pseudo) > 0 and iteration < max_iterations:
+        model = create_bert_uncased_model(dense_units, learning_rate, max_len)
         iteration += 1
 
         # Re-tokenize the labelled data and validation data
@@ -137,7 +178,6 @@ def bert_iterative_training(model, tokenizer, unlabelled_data_pseudo, labelled_t
         else:
             raise ValueError("Mismatch in lengths of predictions and unlabelled data.")
 
-
         # Filter predictions by confidence threshold
         df_confident = df_predictions[df_predictions['confidence'] >= confidence_threshold]
 
@@ -152,6 +192,8 @@ def bert_iterative_training(model, tokenizer, unlabelled_data_pseudo, labelled_t
         # Remove the confident predictions from the unlabelled data
         unlabelled_data_pseudo = unlabelled_data_pseudo.drop(df_confident.index)
 
+    save_model_and_pseudos_bert(model, labelled_train_df)
+    
     return labelled_train_df
 
 def self_training(model, vectorizer, unlabelled_data_pseudo, labelled_train_df, val_df_pseudo, confidence_threshold=0.9, max_iterations=10):
