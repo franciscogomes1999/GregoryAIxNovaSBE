@@ -212,16 +212,16 @@ def load_and_format_dataset(dataset_path, text_cleaning_function, text_column1='
     # Handle NaN values in the label column
     df[label_column] = df[label_column].fillna('unlabeled')
 
-    df['full_text_clean'] = text_cleaning_function(df['full_text'], remove_stopwords=remove_stopwords, remove_punctuation=remove_punctuation, remove_digits=remove_digits, stemming=stemming, lemmatization=lemmatization)
+    df['text_processed'] = text_cleaning_function(df['full_text'], remove_stopwords=remove_stopwords, remove_punctuation=remove_punctuation, remove_digits=remove_digits, stemming=stemming, lemmatization=lemmatization)
 
-    data = df[['full_text_clean', label_column]]
+    data = df[['text_processed', label_column]]
     
     # Encode label column to 0 and 1, keeping 'unlabeled' as is
     data[label_column] = data[label_column].apply(lambda x: 1 if x is True else (0 if x is False else 'unlabeled'))
 
     # Drop rows with NaN values in the text column
 
-    data = data.dropna(subset=['full_text_clean'])
+    data = data.dropna(subset=['text_processed'])
     
     return data
 
