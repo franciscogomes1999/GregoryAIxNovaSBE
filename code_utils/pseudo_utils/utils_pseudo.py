@@ -151,7 +151,6 @@ def bert_iterative_training(model, tokenizer, unlabelled_data_pseudo, labelled_t
 
         # Remove the confident predictions from the unlabelled data
         unlabelled_data_pseudo = unlabelled_data_pseudo.drop(df_confident.index)
-        unlabelled_data_pseudo = unlabelled_data_pseudo.reset_index(drop=True)
 
     return labelled_train_df
 

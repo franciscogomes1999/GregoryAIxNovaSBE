@@ -182,13 +182,14 @@ def fetch_all_articles(url, old_articles, n_articles_inference, api_key=None, ar
 
     if isinstance(n_articles_inference, str) and n_articles_inference == 'max':
         inference_df = all_new_articles
-    elif n_articles_inference >= len(all_new_articles):
-        inference_df = all_new_articles
-    else:
-        try:
-            inference_df = all_new_articles.tail(n_articles_inference)
-        except:
-            raise ValueError("The number of articles for inference is not a valid integer or 'max'.")
+    elif isinstance(n_articles_inference, int):
+        if n_articles_inference >= len(all_new_articles):
+            inference_df = all_new_articles
+        else:
+            try:
+                inference_df = all_new_articles.tail(n_articles_inference)
+            except:
+                raise ValueError("The number of articles for inference is not a valid integer or 'max'.")
 
     remaining_articles_id = set(articles_df.index) - set(inference_df.index)
     train_df = articles_df.loc[list(remaining_articles_id)]
