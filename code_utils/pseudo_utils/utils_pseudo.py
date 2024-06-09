@@ -125,6 +125,7 @@ def save_model_and_pseudos_bert(model, pseudo_labels_df):
         os.remove(pseudo_labels_path)
     pseudo_labels_df.to_csv(pseudo_labels_path)
     print(f"Pseudo-labelled data saved to {pseudo_labels_path}")
+    os.chdir(current_dir)
 
 def bert_iterative_training(tokenizer, unlabelled_data_pseudo, labelled_train_df, val_df_pseudo, dense_units=48, learning_rate=1e-5, max_len=128, confidence_threshold=0.9, max_iterations=10):
 

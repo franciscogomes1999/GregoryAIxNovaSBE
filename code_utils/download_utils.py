@@ -215,7 +215,7 @@ def download_and_extract_zip(url, old_articles, n_articles_inference):
     """
 
     try:
-        old_articles_df = pd.read_csv(old_articles, index_col=0)
+        old_articles_df = pd.read_csv(old_articles)
     except:
         if not isinstance(old_articles, pd.DataFrame):
             raise ValueError("The previous articles data is not a valid DataFrame or path.")
@@ -229,24 +229,22 @@ def download_and_extract_zip(url, old_articles, n_articles_inference):
         for file_info in z.infolist():
             if file_info.filename.endswith('.csv'):
                 with z.open(file_info) as file:
-                    articles_df = pd.read_csv(file, index_col=1).drop(columns='Unnamed: 0')
+                    articles_df = pd.read_csv(file).drop(columns='Unnamed: 0')
 
-    new_articles_id = set(articles_df.index) - set(old_articles_df.index)
-    all_new_articles = articles_df.loc[list(new_articles_id)]
+    new_articles = articles_df.loc[~articles_df["article_id"].isin(old_articles_df["article_id"])]
 
     if isinstance(n_articles_inference, str) and n_articles_inference == 'max':
-        inference_df = all_new_articles
+        inference_df = new_articles
     elif isinstance(n_articles_inference, int):
-        if n_articles_inference >= len(all_new_articles):
-            inference_df = all_new_articles
+        if n_articles_inference >= len(new_articles):
+            inference_df = new_articles
         else:
             try:
-                inference_df = all_new_articles.tail(n_articles_inference)
+                inference_df = new_articles.tail(n_articles_inference)
             except:
                 raise ValueError("The number of articles for inference is not a valid integer or 'max'.")
 
-    remaining_articles_id = set(articles_df.index) - set(inference_df.index)
-    train_df = articles_df.loc[list(remaining_articles_id)]
+    train_df = articles_df.loc[articles_df["article_id"].isin(old_articles_df["article_id"])]
 
     save_dataframe_to_date_folder(train_df, 'train_articles.csv')
     save_dataframe_to_date_folder(inference_df, 'inference_articles.csv')
