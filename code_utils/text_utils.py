@@ -205,7 +205,7 @@ def load_and_format_dataset(dataset_path, text_cleaning_function, text_column1='
     pd.DataFrame
         DataFrame with cleaned text and encoded labels.
     """
-    df = pd.read_csv(dataset_path, index_col=1)
+    df = pd.read_csv(dataset_path, index_col=0)
     df['full_text'] = df[text_column1] + ' ' + df[text_column2]
     df = df.dropna(subset=['full_text'])
 
