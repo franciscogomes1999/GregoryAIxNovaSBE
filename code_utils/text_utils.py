@@ -205,7 +205,17 @@ def load_and_format_dataset(dataset_path, text_cleaning_function, text_column1='
     pd.DataFrame
         DataFrame with cleaned text and encoded labels.
     """
-    df = pd.read_csv(dataset_path, index_col=0)
+    
+    df = pd.read_csv(dataset_path)
+
+    # step to ensure consistency in the index column formating as article_id
+    # if the first column is not article_id, remove that first column
+    if df.columns[0] != 'article_id':
+        df = df.drop(columns=df.columns[0])
+
+    # set article_id as index
+    df.set_index('article_id', inplace=True)
+    
     df['full_text'] = df[text_column1] + ' ' + df[text_column2]
     df = df.dropna(subset=['full_text'])
 

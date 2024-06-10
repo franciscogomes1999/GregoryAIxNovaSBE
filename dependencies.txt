@@ -1,4 +1,4 @@
-aequitas==0.42.0
+
 alabaster==0.7.12
 altair==4.1.0
 anyio==4.2.0
@@ -34,6 +34,7 @@ flake8==6.1.0
 Flask==0.12.2
 Flask-Bootstrap==3.3.7.1
 fonttools==4.25.0
+gdown==5.2.0
 greenlet==3.0.3
 html5lib==1.1
 httplib2==0.22.0
