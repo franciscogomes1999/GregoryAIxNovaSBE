@@ -1,6 +1,7 @@
 """
 This is a utilitty file for LGBM + tfidf algorithm for classification consisting of training function, prediction function and evaluation function."""
 
+import numpy as np
 import lightgbm as lgb
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score, roc_auc_score, classification_report, confusion_matrix
@@ -16,7 +17,15 @@ class LGBM_TFIDF_Classifier:
         random_seed (int): Random seed for reproducibility.
         """
         if lgbm_params is None:
-            lgbm_params = {}
+            lgbm_params = {'colsample_bytree': 0.5527441519925319,
+                           'learning_rate': 0.05670501625777839,
+                           'max_depth': 13,
+                           'min_child_samples': 6,
+                           'n_estimators': 231,
+                           'num_leaves': 19,
+                           'reg_alpha': 0.028846140312283053,
+                           'reg_lambda': 0.5494358889794788,
+                           'subsample': 0.8310616529434425}
         
         self.vectorizer = TfidfVectorizer()
         self.classifier = lgb.LGBMClassifier(**lgbm_params, random_state=random_seed)
@@ -36,21 +45,18 @@ class LGBM_TFIDF_Classifier:
         print("Training completed.")
 
     def evaluate(self, X, y):
-        """
-        Evaluate the model with accuracy, classification report, and confusion matrix.
-        
-        Parameters:
-        X (pd.Series or list): Text data.
-        y (pd.Series or list): True labels.
-        
-        Returns:
-        dict: Dictionary with accuracy, classification report, and confusion matrix.
-        """
         if not self.fitted:
-            raise Exception("Model not trained. Call `train` method first.")
+            raise Exception("Model not trained. Call train method first.")
         
         X_transformed = self.vectorizer.transform(X)
         y_pred = self.classifier.predict(X_transformed)
+        
+        # Ensure labels are in the same format
+        y = y.astype(int)
+        y_pred = y_pred.astype(int)
+        
+        print("True labels:", set(y))
+        print("Predicted labels:", set(y_pred))
         
         accuracy = accuracy_score(y, y_pred)
         recall = recall_score(y, y_pred, average='weighted')
