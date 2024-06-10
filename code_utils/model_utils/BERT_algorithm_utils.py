@@ -15,11 +15,14 @@ from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.callbacks import EarlyStopping
 from transformers import BertTokenizer, TFBertModel
 from tensorflow.keras.regularizers import l2
+from tensorflow.keras.metrics import Precision, Recall, AUC
 import joblib
 import kerastuner as kt
 from kerastuner.tuners import Hyperband
 
+
 class BERT_Classifier:
+
     """
     A class used to represent a BERT model for text classification.
 
@@ -45,6 +48,8 @@ class BERT_Classifier:
         Time taken for training.
     train_epochs : int
         Number of epochs the model was trained for.
+    metrics : list
+        List of metrics collected during training.
 
     Methods
     -------
@@ -74,14 +79,15 @@ class BERT_Classifier:
         Tunes the hyperparameters using KerasTuner's Hyperband.
     """
 
-    def __init__(self, max_len=128, bert_model_name='microsoft/BiomedNLP-BiomedBERT-base-uncased-abstract-fulltext', best_learning_rate=2e-05, best_dense_units=48, best_freeze_weights=False):
+    def __init__(self, max_len=128, bert_model_name='microsoft/BiomedNLP-BiomedBERT-base-uncased-abstract-fulltext', best_learning_rate=2e-05, best_dense_units=48, best_freeze_weights=False, metrics=['accuracy']):
         self.max_len = max_len
         self.tokenizer = BertTokenizer.from_pretrained(bert_model_name)
         self.bert_model = TFBertModel.from_pretrained(bert_model_name, from_pt=True)
         self.best_learning_rate = best_learning_rate
         self.best_dense_units = best_dense_units
         self.best_freeze_weights = best_freeze_weights
-        self.model = self.create_bert_model()
+        self.metrics = metrics
+        self.model = self.create_bert_model(metrics=metrics)
         self.history = None
         self.time_delta = None
         self.train_epochs = None
@@ -108,7 +114,7 @@ class BERT_Classifier:
 
         return input_ids, attention_masks
 
-    def create_bert_model(self):
+    def create_bert_model(self, metrics=['accuracy']):
         input_ids = Input(shape=(self.max_len,), dtype=tf.int32, name="input_ids")
         attention_masks = Input(shape=(self.max_len,), dtype=tf.int32, name="attention_masks")
 
@@ -121,7 +127,7 @@ class BERT_Classifier:
         classification_output = Dense(2, activation='softmax')(x)
 
         model = Model(inputs=[input_ids, attention_masks], outputs=classification_output)
-        model.compile(optimizer=Adam(learning_rate=self.best_learning_rate), loss='categorical_crossentropy', metrics=['accuracy'])
+        model.compile(optimizer=Adam(learning_rate=self.best_learning_rate), loss='categorical_crossentropy', metrics=metrics)
 
         return model
 
@@ -153,6 +159,9 @@ class BERT_Classifier:
         return history, time_delta, train_epochs
 
     def plot_history(self, metrics=['accuracy', 'loss']):
+        if not set(metrics).remove('loss').issubset(self.metrics):
+            raise ValueError(f"Metrics must be part of {self.metrics} defined in the class definition.")
+
         num_metrics = len(metrics)
         plt.figure(figsize=(8 * num_metrics // 2, 5 * num_metrics // 2))
 
@@ -175,6 +184,9 @@ class BERT_Classifier:
             print(f"Final Validation {metric.capitalize()}: {final_val_value:.4f}")
 
     def evaluate_and_log_model(self, test_inputs, test_labels, train_time, n_epochs, model_description='model', metrics=['accuracy'], model_registry=None):
+        if not set(metrics).issubset(self.metrics):
+            raise ValueError(f"Metrics must be part of {self.metrics} defined in the class definition.")
+        
         result_dict = self.model.evaluate(test_inputs, test_labels, return_dict=True)
         print(result_dict)
         log_data = {
@@ -201,14 +213,14 @@ class BERT_Classifier:
         model_registry.to_csv('model_results_table.csv', index=False)
         return model_registry
 
-    def train_plot_and_evaluate(self, train_inputs, train_labels, val_inputs, val_labels, test_inputs, test_labels, epochs=10, model_description='model', metrics=['accuracy'], model_registry=None):
+    def train_plot_and_evaluate(self, train_inputs, train_labels, val_inputs, val_labels, test_inputs, test_labels, epochs=10, model_description='model', metrics_plot=['loss', 'accuracy'], metrics_eval=['accuracy'], model_registry=None):
         print('*** INITIALIZING MODEL TRAINING ***\n\n')
         history, train_time, n_epochs = self.train_model(train_inputs, train_labels, val_inputs, val_labels, epochs)
         print('\n\n*** TRAINING COMPLETE ***\n\n')
         print('*** PLOTTING TRAINING HISTORY ***\n\n')
-        self.plot_history(metrics)
+        self.plot_history(metrics_plot)
         print('\n\n*** EVALUATING MODEL ON TEST SET ***\n\n')
-        model_registry = self.evaluate_and_log_model(test_inputs, test_labels, train_time, n_epochs, model_description, metrics, model_registry)
+        model_registry = self.evaluate_and_log_model(test_inputs, test_labels, train_time, n_epochs, model_description, metrics_eval, model_registry)
         return model_registry
 
     def save_model(self, model_path):
@@ -276,6 +288,7 @@ class BERT_Classifier:
         print(test_distribution)
 
     def hyperparameter_tuning(self, X_train_ids, X_train_masks, y_train, X_val_ids, X_val_masks, y_val):
+        
         """
         Perform hyperparameter tuning using KerasTuner's Hyperband.
 
@@ -352,7 +365,7 @@ bert_classifier = BERT_Classifier()
 # Calculate and plot token lengths
 bert_classifier.calculate_and_plot_token_lengths(train_df, val_df, test_df)
 
-# Encode the datasets
+# Encode the texts
 X_train_ids, X_train_masks = bert_classifier.encode_texts(train_df['text_processed'].values)
 X_val_ids, X_val_masks = bert_classifier.encode_texts(val_df['text_processed'].values)
 X_test_ids, X_test_masks = bert_classifier.encode_texts(test_df['text_processed'].values)
@@ -364,5 +377,4 @@ y_test = to_categorical(test_df['relevant'], num_classes=2)
 
 # Train, plot, and evaluate the model
 model_registry = bert_classifier.train_plot_and_evaluate([X_train_ids, X_train_masks], y_train, [X_val_ids, X_val_masks], y_val, [X_test_ids, X_test_masks], y_test)
-
 """

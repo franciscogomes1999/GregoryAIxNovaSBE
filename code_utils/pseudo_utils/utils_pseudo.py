@@ -114,15 +114,11 @@ def save_model_and_pseudos_bert(model, pseudo_labels_df):
 
     # Save the model
     model_path = os.path.join(base_folder, subfolder, 'pseudo_bert_model')
-    if os.path.exists(model_path):
-        os.remove(model_path)
     model.save(model_path)
     print(f"Model saved to {model_path}")
 
     # Save the pseudo-labelled data
     pseudo_labels_path = os.path.join(base_folder, subfolder, 'pseudo_labels_bert.csv')
-    if os.path.exists(pseudo_labels_path):
-        os.remove(pseudo_labels_path)
     pseudo_labels_df.to_csv(pseudo_labels_path)
     print(f"Pseudo-labelled data saved to {pseudo_labels_path}")
     os.chdir(current_dir)
