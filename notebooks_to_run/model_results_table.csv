@@ -1,0 +1,2 @@
+model,training_time,n_epochs,avg_epoch_time,test_accuracy,test_precision,test_recall,test_auc
+BERT (Pubmed) with pseudo-labelling,311.91410541534424,1,311.91410541534424,0.8923884630203247,0.8923884630203247,0.8923884630203247,0.9481230974197388

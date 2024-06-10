@@ -17,6 +17,7 @@ from transformers import BertTokenizer, TFBertModel
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.metrics import Precision, Recall, AUC
 import joblib
+import pickle
 import kerastuner as kt
 from kerastuner.tuners import Hyperband
 
@@ -159,8 +160,8 @@ class BERT_Classifier:
         return history, time_delta, train_epochs
 
     def plot_history(self, metrics=['accuracy', 'loss']):
-        if not set(metrics).remove('loss').issubset(self.metrics):
-            raise ValueError(f"Metrics must be part of {self.metrics} defined in the class definition.")
+        #if not set(metrics).difference(['loss']).issubset(set(self.metrics)):
+         #   raise ValueError(f"Metrics must be part of {self.metrics} defined in the class definition.")
 
         num_metrics = len(metrics)
         plt.figure(figsize=(8 * num_metrics // 2, 5 * num_metrics // 2))
@@ -184,8 +185,8 @@ class BERT_Classifier:
             print(f"Final Validation {metric.capitalize()}: {final_val_value:.4f}")
 
     def evaluate_and_log_model(self, test_inputs, test_labels, train_time, n_epochs, model_description='model', metrics=['accuracy'], model_registry=None):
-        if not set(metrics).issubset(self.metrics):
-            raise ValueError(f"Metrics must be part of {self.metrics} defined in the class definition.")
+        #if not set(metrics).issubset(set(self.metrics)):
+        #    raise ValueError(f"Metrics must be part of {self.metrics} defined in the class definition.")
         
         result_dict = self.model.evaluate(test_inputs, test_labels, return_dict=True)
         print(result_dict)
@@ -227,9 +228,23 @@ class BERT_Classifier:
         self.model.save(model_path)
         print(f"Model saved at {model_path}")
 
+    def save_weights(self, weights_path, save_format='h5'):
+        self.model.save_weights(weights_path, save_format=save_format)
+        print(f"Weights saved at {weights_path}.{save_format}")
+
+    def save_history(self, history_path):
+        with open(history_path, 'wb') as file:
+            pickle.dump(self.history.history, file)
+        print(f"Training history saved at {history_path}")
+
     def load_model(self, model_path):
         self.model = tf.keras.models.load_model(model_path, custom_objects={'TFBertModel': TFBertModel})
         print(f"Model loaded from {model_path}")
+
+    def load_history(self, history_path):
+        with open(history_path, 'rb') as file:
+            self.history = pickle.load(file)
+        print(f"Training history loaded from {history_path}")
 
     def predict(self, X):
         return self.model.predict(X)

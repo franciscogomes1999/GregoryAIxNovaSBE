@@ -57,7 +57,7 @@ def encode_texts(tokenizer, texts, max_len=128):
     return input_ids, attention_masks
 
 
-def create_bert_uncased_model(dense_units=48, learning_rate=1e-5, max_len=128):
+def create_bert_uncased_model(dense_units=48, learning_rate=2e-5, max_len=128):
 
     """
     Create a BERT-based model for text classification.
@@ -123,7 +123,7 @@ def save_model_and_pseudos_bert(model, pseudo_labels_df):
     print(f"Pseudo-labelled data saved to {pseudo_labels_path}")
     os.chdir(current_dir)
 
-def bert_iterative_training(tokenizer, unlabelled_data_pseudo, labelled_train_df, val_df_pseudo, dense_units=48, learning_rate=1e-5, max_len=128, confidence_threshold=0.9, max_iterations=10):
+def bert_iterative_training(tokenizer, unlabelled_data_pseudo, labelled_train_df, val_df_pseudo, dense_units=48, learning_rate=2e-5, max_len=128, confidence_threshold=0.9, max_iterations=10):
 
     """
     Iteratively train a BERT model on labelled data, predict on unlabelled data, and move confident predictions to the labelled set.

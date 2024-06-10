@@ -1,9 +1,8 @@
-import os 
-
-from code_utils.model_utils.LSTM_algorithm_utils import *  
-from code_utils.model_utils.BERT_algorithm_utils import *  
-from code_utils.model_utils.LGBM_algorithm_utils import * 
-
+import os
+import pandas as pd
+from code_utils.model_utils.LSTM_algorithm_utils import LSTM_Classifier
+from code_utils.model_utils.BERT_algorithm_utils import BERT_Classifier
+from code_utils.model_utils.LGBM_algorithm_utils import LGBM_TFIDF_Classifier
 
 def predict_with_model(model_name, model_path, vectorizer_path, data):
     if model_name == 'LSTM_Classifier':
@@ -12,8 +11,9 @@ def predict_with_model(model_name, model_path, vectorizer_path, data):
         predictions = model_instance.predict(data)
     elif model_name == 'BERT_Classifier':
         model_instance = BERT_Classifier()
-        model_instance.load_model(model_path)
-        predictions = model_instance.predict(data)
+        model_instance.load_weights(model_path)  
+        input_ids, attention_masks = model_instance.encode_texts(data)  # Encode texts for BERT
+        predictions = model_instance.predict([input_ids, attention_masks])
     elif model_name == 'LGBM_TFIDF_Classifier':
         model_instance = LGBM_TFIDF_Classifier()
         model_instance.load_model(vectorizer_path, model_path)
