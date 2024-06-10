@@ -316,7 +316,7 @@ class LSTM_Classifier:
         history : tf.keras.callbacks.History
             History object containing the training history.
         metrics : list, optional
-            List of metrics to plot (default is ['loss', 'accuracy', 'precision', 'recall']).
+            List of metrics to plot (default is ['loss', 'accuracy', 'precision', 'recall', 'AUC']).
         """
         metrics = ['loss'] + metrics
         num_metrics = len(metrics)
@@ -340,7 +340,7 @@ class LSTM_Classifier:
             print(f"\nFinal Training {metric.capitalize()}: {final_train_value:.4f}")
             print(f"Final Validation {metric.capitalize()}: {final_val_value:.4f}")
 
-    def evaluate_and_log_model(self, test_dataset, train_time, n_epochs, model_description='model', metrics=['accuracy', 'recall', 'precision', ''], model_registry=None):
+    def evaluate_and_log_model(self, test_dataset, train_time, n_epochs, model_description='model', metrics=['accuracy', 'recall', 'precision', 'AUC'], model_registry=None):
         """
         Evaluate the model on the test set and log the results.
 
@@ -355,7 +355,7 @@ class LSTM_Classifier:
         model_description : str, optional
             Description of the model (default is 'model').
         metrics : list, optional
-            List of metrics to evaluate (default is ['loss', 'accuracy']).
+            List of metrics to evaluate (default is ['accuracy', 'recall', 'precision', 'AUC']).
         model_registry : pd.DataFrame, optional
             DataFrame containing the results of previous models (default is None).
 
@@ -391,7 +391,7 @@ class LSTM_Classifier:
         model_registry.to_csv('model_results_table.csv', index=False)
         return model_registry
 
-    def train_plot_and_evaluate(self, train_ds, val_ds, test_ds, epochs=20, strt_from_epoch=3, model_description='model', metrics=['loss', 'accuracy'], model_registry=None):
+    def train_plot_and_evaluate(self, train_ds, val_ds, test_ds, epochs=20, strt_from_epoch=3, model_description='model', metrics_plot=['loss', 'accuracy'], metrics_eval=['accuracy'], model_registry=None):
         """
         Trains the model, plots the training history, and evaluates the model on the test set.
 
@@ -423,9 +423,9 @@ class LSTM_Classifier:
         history, train_time, n_epochs = self.train_model(train_ds, val_ds, epochs, start_from_epoch=strt_from_epoch)
         print('\n\n*** TRAINING COMPLETE ***\n\n')
         print('*** PLOTTING TRAINING HISTORY ***\n\n')
-        self.plot_history(history, metrics)
+        self.plot_history(history, metrics_plot)
         print('\n\n*** EVALUATING MODEL ON TEST SET ***\n\n')
-        model_registry = self.evaluate_and_log_model(test_ds, train_time, n_epochs, model_description, metrics, model_registry)
+        model_registry = self.evaluate_and_log_model(test_ds, train_time, n_epochs, model_description, metrics_eval, model_registry)
         return model_registry
 
     def save_model(self, model_path):

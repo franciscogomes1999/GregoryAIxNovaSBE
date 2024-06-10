@@ -114,13 +114,9 @@ def save_dataframe_to_date_folder(df, filename):
     if not os.path.exists(base_folder):
         os.makedirs(base_folder)
 
-    # Create the date folder if it does not exist, otherwise clear its contents
+    # Create the date folder if it does not exist
     if not os.path.exists(date_folder_path):
         os.makedirs(date_folder_path)
-    else:
-        # Delete duplicate file
-        if os.path.exists(file_path):
-            os.remove(file_path)
 
     # Save the DataFrame to the CSV file
     df.to_csv(file_path)
