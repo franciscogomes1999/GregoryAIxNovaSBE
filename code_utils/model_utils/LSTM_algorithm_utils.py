@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import gensim.downloader as api
 import joblib
+import re
+import string
 
 class LSTM_Classifier:
     """
@@ -497,3 +499,31 @@ class LSTM_Classifier:
 # lstm_tfidf.save_model('lstm_model.h5')
 # lstm_tfidf.load_model('lstm_model.h5')
 # predictions = lstm_tfidf.predict(new_data)
+
+
+
+def custom_standardization(input_text):
+    """Lowercase and remove punctuation from the text."""
+    lowercase_text = tf.strings.lower(input_text)
+    cleaned_text = tf.strings.regex_replace(lowercase_text, '[%s]' % re.escape(string.punctuation), '')
+    return cleaned_text
+
+
+def get_lstm_vectoriser(train_data_path, function):
+    train = pd.read_csv(train_data_path)
+
+    output_dim = 512
+
+    vocab_size = 22000
+
+    # Create the TextVectorization layer
+    vectorize_layer = tf.keras.layers.TextVectorization(
+        max_tokens=vocab_size,
+        output_mode='int',
+        output_sequence_length=output_dim,
+        standardize=function
+    )
+
+    # Assuming `texts` is a list or dataset of your text data
+    vectorize_layer.adapt(train['text_processed'])
+    return vectorize_layer

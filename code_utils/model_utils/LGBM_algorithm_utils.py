@@ -116,3 +116,4 @@ class LGBM_TFIDF_Classifier:
         self.classifier = joblib.load(classifier_path)
         self.fitted = True  # Ensure fitted is set to True
         print(f"Model loaded: vectorizer from {vectorizer_path}, classifier from {classifier_path}")
+
