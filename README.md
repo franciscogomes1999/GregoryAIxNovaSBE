@@ -1,7 +1,5 @@
 # GregoryAIxNovaSBE
 
-# GregoryAIxNovaSBE
-
 ## Classification of Relevant Multiple Sclerosis Articles
 
 ### Project Description
