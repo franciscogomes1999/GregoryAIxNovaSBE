@@ -26,8 +26,8 @@ pip install -r requirements.txt
 
 ### Pipelines
 ##### Train & Tune Pipeline
-1.  Data: Retrieve the articlesdataset.csv from the database.
-2 Unprocessed Data: The raw dataset is saved as articlesdataset.csv.
+1. Data: Retrieve the articlesdataset.csv from the database.
+2. Unprocessed Data: The raw dataset is saved as articlesdataset.csv.
 3. Clean + Preprocess: Data cleaning and preprocessing steps are performed.
 4. Processed Data: The cleaned data is saved as processed_data.csv.
 5. Split Data: Split the data into training, validation, test, and unlabelled datasets.
